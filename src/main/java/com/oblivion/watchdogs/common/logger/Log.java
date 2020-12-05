@@ -16,6 +16,7 @@ import java.util.Date;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import com.oblivion.watchdogs.common.utility.GenericUtility;
 
@@ -107,6 +108,7 @@ public class Log {
 		try {
 			Logger log = LoggerFactory.getLogger(instance.getClass());
 			if (log.isErrorEnabled()) {
+				logInstance.setMDC();
 				log.error(logInstance.checkMessage(message, objects), objects);
 			}
 		} catch (Exception e) {
@@ -125,6 +127,7 @@ public class Log {
 		try {
 			Logger log = LoggerFactory.getLogger(instance.getClass());
 			if (log.isErrorEnabled()) {
+				logInstance.setMDC();
 				logInstance.convertToJSON(objects);
 				log.error(logInstance.checkMessage(message, objects), objects);
 			}
@@ -195,6 +198,7 @@ public class Log {
 		try {
 			Logger log = LoggerFactory.getLogger(instance.getClass());
 			if (log.isWarnEnabled()) {
+				logInstance.setMDC();
 				log.warn(logInstance.checkMessage(message), objects);
 			}
 		} catch (Exception e) {
@@ -213,6 +217,7 @@ public class Log {
 		try {
 			Logger log = LoggerFactory.getLogger(instance.getClass());
 			if (log.isWarnEnabled()) {
+				logInstance.setMDC();
 				logInstance.convertToJSON(objects);
 				log.warn(logInstance.checkMessage(message), objects);
 			}
@@ -246,6 +251,7 @@ public class Log {
 		try {
 			Logger log = LoggerFactory.getLogger(instance.getClass());
 			if (log.isInfoEnabled()) {
+				logInstance.setMDC();
 				log.info(logInstance.checkMessage(message, objects), objects);
 			}
 		} catch (Exception e) {
@@ -265,6 +271,7 @@ public class Log {
 		try {
 			Logger log = LoggerFactory.getLogger(instance.getClass());
 			if (log.isInfoEnabled()) {
+				logInstance.setMDC();
 				logInstance.convertToJSON(objects);
 				log.info(logInstance.checkMessage(message, objects), objects);
 			}
@@ -298,6 +305,7 @@ public class Log {
 		try {
 			Logger log = LoggerFactory.getLogger(instance.getClass());
 			if (log.isDebugEnabled()) {
+				logInstance.setMDC();
 				log.debug(logInstance.checkMessage(message, objects), objects);
 			}
 		} catch (Exception e) {
@@ -316,6 +324,7 @@ public class Log {
 		try {
 			Logger log = LoggerFactory.getLogger(instance.getClass());
 			if (log.isDebugEnabled()) {
+				logInstance.setMDC();
 				logInstance.convertToJSON(objects);
 				log.debug(logInstance.checkMessage(message, objects), objects);
 			}
@@ -350,6 +359,7 @@ public class Log {
 		try {
 			Logger log = LoggerFactory.getLogger(instance.getClass());
 			if (log.isTraceEnabled()) {
+				logInstance.setMDC();
 				log.trace(logInstance.checkMessage(message, objects), objects);
 			}
 		} catch (Exception e) {
@@ -368,6 +378,7 @@ public class Log {
 		try {
 			Logger log = LoggerFactory.getLogger(instance.getClass());
 			if (log.isTraceEnabled()) {
+				logInstance.setMDC();
 				logInstance.convertToJSON(objects);
 				log.trace(logInstance.checkMessage(message, objects), objects);
 			}
@@ -402,7 +413,7 @@ public class Log {
 		try {
 			String threadName = "[" + Thread.currentThread().getName() + "]";
 			System.out.println(dateFormat.format(new Date()) + D3 + OUT + D3 + threadName + D3 + getClassFQDM(instance)
-					+ logInstance.getFormattedMessage(message, objects));
+					+ logInstance.getContextInfo() + D3 + logInstance.getFormattedMessage(message, objects));
 		} catch (Exception e) {
 			printStandardError(e);
 		}
@@ -421,7 +432,7 @@ public class Log {
 			String threadName = "[" + Thread.currentThread().getName() + "]";
 			logInstance.convertToJSON(objects);
 			System.out.println(dateFormat.format(new Date()) + D3 + OUT + D3 + threadName + D3 + getClassFQDM(instance)
-					+ logInstance.getFormattedMessage(message, objects));
+					+ logInstance.getContextInfo() + D3 + logInstance.getFormattedMessage(message, objects));
 		} catch (Exception e) {
 			printStandardError(e);
 		}
@@ -437,8 +448,9 @@ public class Log {
 	public static void sysErr(Object instance, String message, Object... objects) {
 		try {
 			String threadName = "[" + Thread.currentThread().getName() + "]";
-			System.err.println(dateFormat.format(new Date()) + D3 + ERROR_OUT + D3 + threadName + D3
-					+ getClassFQDM(instance) + logInstance.getFormattedMessage(message, objects));
+			System.err.println(
+					dateFormat.format(new Date()) + D3 + ERROR_OUT + D3 + threadName + D3 + getClassFQDM(instance)
+							+ logInstance.getContextInfo() + D3 + logInstance.getFormattedMessage(message, objects));
 		} catch (Exception e) {
 			printStandardError(e);
 		}
@@ -456,8 +468,9 @@ public class Log {
 		try {
 			String threadName = "[" + Thread.currentThread().getName() + "]";
 			logInstance.convertToJSON(objects);
-			System.err.println(dateFormat.format(new Date()) + D3 + ERROR_OUT + D3 + threadName + D3
-					+ getClassFQDM(instance) + logInstance.getFormattedMessage(message, objects));
+			System.err.println(
+					dateFormat.format(new Date()) + D3 + ERROR_OUT + D3 + threadName + D3 + getClassFQDM(instance)
+							+ logInstance.getContextInfo() + D3 + logInstance.getFormattedMessage(message, objects));
 		} catch (Exception e) {
 			printStandardError(e);
 		}
@@ -563,6 +576,19 @@ public class Log {
 			return args.toString();
 		}
 		return message;
+	}
+
+	protected void setMDC() {
+		MDC.put("contextInfo", logInstance.getContextInfo());
+	}
+
+	/**
+	 * Method should be overridden to apply custom context info to logs
+	 * 
+	 * @return
+	 */
+	protected String getContextInfo() {
+		return "[WatchDogOblivion]";
 	}
 
 	/**
