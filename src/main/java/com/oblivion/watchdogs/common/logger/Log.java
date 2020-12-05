@@ -3,7 +3,16 @@ package com.oblivion.watchdogs.common.logger;
 import static com.oblivion.watchdogs.common.constants.GeneralConstants.ARG;
 import static com.oblivion.watchdogs.common.constants.GeneralConstants.D1;
 import static com.oblivion.watchdogs.common.constants.GeneralConstants.D2;
+import static com.oblivion.watchdogs.common.constants.GeneralConstants.D3;
 import static com.oblivion.watchdogs.common.constants.GeneralConstants.D4;
+import static com.oblivion.watchdogs.common.constants.GeneralConstants.ERROR_OUT;
+import static com.oblivion.watchdogs.common.constants.GeneralConstants.GLOBAL_CONSOLE_LOG_DATE_FORMAT;
+import static com.oblivion.watchdogs.common.constants.GeneralConstants.OUT;
+import static com.oblivion.watchdogs.common.utility.GenericUtility.getClassFQDM;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +38,11 @@ public class Log {
 	private static String messageError = "An exception occurred while trying to log a message" + D1;
 
 	/**
+	 * Used to add date to system outputs
+	 */
+	private static DateFormat dateFormat = new SimpleDateFormat(GLOBAL_CONSOLE_LOG_DATE_FORMAT);
+
+	/**
 	 * Getter
 	 * 
 	 * @return
@@ -44,6 +58,42 @@ public class Log {
 	 */
 	public static void setLogInstance(Log logInstance) {
 		Log.logInstance = logInstance;
+	}
+
+	/**
+	 * Getter
+	 * 
+	 * @return
+	 */
+	public static String getMessageError() {
+		return messageError;
+	}
+
+	/**
+	 * Setter
+	 * 
+	 * @param logInstance
+	 */
+	public static void setMessageError(String messageError) {
+		Log.messageError = messageError;
+	}
+
+	/**
+	 * Getter
+	 * 
+	 * @return
+	 */
+	public static DateFormat getDateFormat() {
+		return dateFormat;
+	}
+
+	/**
+	 * Setter
+	 * 
+	 * @param logInstance
+	 */
+	public static void setDateFormat(DateFormat dateFormat) {
+		Log.dateFormat = dateFormat;
 	}
 
 	/**
@@ -342,6 +392,91 @@ public class Log {
 	}
 
 	/**
+	 * Uses system console to print standard outputs separated by line feed
+	 *
+	 * @param instance
+	 * @param message
+	 * @param objects
+	 */
+	public static void sysOut(Object instance, String message, Object... objects) {
+		try {
+			String threadName = "[" + Thread.currentThread().getName() + "]";
+			System.out.println(dateFormat.format(new Date()) + D3 + OUT + D3 + threadName + D3 + getClassFQDM(instance)
+					+ logInstance.getFormattedMessage(message, objects));
+		} catch (Exception e) {
+			printStandardError(e);
+		}
+	}
+
+	/**
+	 * Uses system console to print standard outputs separated by line feed with
+	 * GSON mapper.
+	 *
+	 * @param instance
+	 * @param message
+	 * @param objects
+	 */
+	public static void sysOutToJSON(Object instance, String message, Object... objects) {
+		try {
+			String threadName = "[" + Thread.currentThread().getName() + "]";
+			logInstance.convertToJSON(objects);
+			System.out.println(dateFormat.format(new Date()) + D3 + OUT + D3 + threadName + D3 + getClassFQDM(instance)
+					+ logInstance.getFormattedMessage(message, objects));
+		} catch (Exception e) {
+			printStandardError(e);
+		}
+	}
+
+	/**
+	 * Uses system console to print error outputs separated by line feed
+	 *
+	 * @param instance
+	 * @param message
+	 * @param objects
+	 */
+	public static void sysErr(Object instance, String message, Object... objects) {
+		try {
+			String threadName = "[" + Thread.currentThread().getName() + "]";
+			System.err.println(dateFormat.format(new Date()) + D3 + ERROR_OUT + D3 + threadName + D3
+					+ getClassFQDM(instance) + logInstance.getFormattedMessage(message, objects));
+		} catch (Exception e) {
+			printStandardError(e);
+		}
+	}
+
+	/**
+	 * Uses system console to print error outputs separated by line feed, with GSON
+	 * mapper
+	 *
+	 * @param instance
+	 * @param message
+	 * @param objects
+	 */
+	public static void sysErrToJSON(Object instance, String message, Object... objects) {
+		try {
+			String threadName = "[" + Thread.currentThread().getName() + "]";
+			logInstance.convertToJSON(objects);
+			System.err.println(dateFormat.format(new Date()) + D3 + ERROR_OUT + D3 + threadName + D3
+					+ getClassFQDM(instance) + logInstance.getFormattedMessage(message, objects));
+		} catch (Exception e) {
+			printStandardError(e);
+		}
+	}
+
+	/**
+	 * Gets the final string to print by formatting
+	 *
+	 * @param message
+	 * @param objects
+	 * @return
+	 */
+	public String getFormattedMessage(String message, Object... objects) {
+		String formattedMessage = logInstance.checkMessage(message, objects).replace("{}", "%s");
+		formattedMessage = String.format(formattedMessage, (objects));
+		return formattedMessage;
+	}
+
+	/**
 	 * Centralized location for the standard logging of any errors that occur trying
 	 * to log.
 	 *
@@ -349,6 +484,17 @@ public class Log {
 	 */
 	protected static void logStandardError(Exception e) {
 		log.error(messageError + e.getClass().getSimpleName() + D4 + e.getLocalizedMessage());
+	}
+
+	/**
+	 * Centralized location for the standard printing of any errors that occur
+	 * trying to log.
+	 *
+	 * @param e
+	 */
+	protected static void printStandardError(Exception e) {
+		System.err.println(dateFormat.format(new Date()) + D3 + ERROR_OUT + D3 + e.getClass().getSimpleName() + D4
+				+ messageError + e.getLocalizedMessage());
 	}
 
 	/**
