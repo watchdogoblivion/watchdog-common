@@ -3,7 +3,14 @@ package com.oblivion.watchdogs.common.utility;
 import static com.oblivion.watchdogs.common.logger.Log.defaultError;
 
 import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.springframework.web.context.request.WebRequest;
 
 import static com.oblivion.watchdogs.common.constants.GeneralConstants.D1;
 import static com.oblivion.watchdogs.common.constants.GeneralConstants.COMMON_ROOT;
@@ -23,6 +30,58 @@ public abstract class GenericUtility {
 	 * Used to convert objects to JSON string
 	 */
 	private static final Gson GSON = new GsonBuilder().create();
+
+	/**
+	 * This method adds headers from a WebRequest to a header map, to be returned in
+	 * response.
+	 *
+	 * @param headers
+	 * @param request
+	 * @return headers
+	 */
+	public static Map<String, String> getWebHeaders(WebRequest request, Map<String, String> headers) {
+		try {
+			Iterator<String> headerIterator = request.getHeaderNames();
+			while (headerIterator.hasNext()) {
+				Object headerObject = headerIterator.next();
+				String header = headerObject != null ? headerObject.toString() : null;
+				if (header != null) {
+					headers.put(header, request.getHeader(header));
+				}
+			}
+		} catch (Exception e) {
+			defaultError(GenericUtility.class, "An error occurred while trying to retrieve the web headers: {}",
+					getJSONExceptionLogger("getWebHeaders", e));
+		}
+		return headers;
+	}
+
+	/**
+	 * This method adds headers from a HttpServletRequest to a header map, to be
+	 * returned in response.
+	 *
+	 * @param request
+	 * @param headers
+	 * @return headers
+	 */
+	public static Map<String, String> getServletHeaders(HttpServletRequest request, Map<String, String> headers) {
+		try {
+			Enumeration<String> headerEnumeration = request.getHeaderNames();
+			if (headerEnumeration != null) {
+				while (headerEnumeration.hasMoreElements()) {
+					Object headerObject = headerEnumeration.nextElement();
+					String header = headerObject != null ? headerObject.toString() : null;
+					if (header != null) {
+						headers.put(header, request.getHeader(header));
+					}
+				}
+			}
+		} catch (Exception e) {
+			defaultError(GenericUtility.class, "An error occurred while trying to retrieved the servlet headers: {}",
+					getJSONExceptionLogger("getServletHeaders", e));
+		}
+		return headers;
+	}
 
 	/**
 	 * Convert objects to JSON strings
