@@ -8,18 +8,25 @@ import static com.oblivion.watchdogs.common.constants.GeneralConstants.D4;
 import static com.oblivion.watchdogs.common.constants.GeneralConstants.ERROR_OUT;
 import static com.oblivion.watchdogs.common.constants.GeneralConstants.GLOBAL_CONSOLE_LOG_DATE_FORMAT;
 import static com.oblivion.watchdogs.common.constants.GeneralConstants.OUT;
+import static com.oblivion.watchdogs.common.constants.GeneralConstants.root;
 import static com.oblivion.watchdogs.common.utility.GenericUtility.getClassFQDM;
 import static com.oblivion.watchdogs.common.utility.GenericUtility.getJSONExceptionLogger;
 
+import java.lang.reflect.InvocationTargetException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Set;
 
+import javax.annotation.PostConstruct;
+
+import org.reflections.Reflections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
 import com.oblivion.watchdogs.common.utility.GenericUtility;
@@ -31,6 +38,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Component
+@DependsOn(value = { "GeneralConstants" })
 public class Log {
 
 	/**
@@ -693,6 +701,46 @@ public class Log {
 	 */
 	protected void convertToJSON(Object... objects) {
 		GenericUtility.convertToJSON(objects);
+	}
+
+	/**
+	 * This method sets the auto wired field values, to corresponding static fields
+	 * so that this class can act statically.
+	 * 
+	 * @throws IllegalAccessException
+	 * @throws InstantiationException
+	 * @throws SecurityException
+	 * @throws NoSuchMethodException
+	 * @throws InvocationTargetException
+	 * @throws IllegalArgumentException
+	 */
+	@PostConstruct
+	private void postConstruct() throws InstantiationException, IllegalAccessException, IllegalArgumentException,
+			InvocationTargetException, NoSuchMethodException, SecurityException {
+		headerLimit = this.logHeaderLimit;
+		payloadLimit = this.logPayloadLimit;
+		stackTraceLimit = this.logStackTraceLimit;
+		log.info("Header limit: {}, Payload limit: {}, Stacktrace limit:{}", headerLimit, payloadLimit,
+				stackTraceLimit);
+		if (root != null && !root.isEmpty()) {
+			Reflections reflections = new Reflections(root);
+			Set<Class<? extends Log>> subTypes = reflections.getSubTypesOf(Log.class);
+			int size = subTypes.size();
+			if (size != 1) {
+				if (size > 1) {
+					log.warn(
+							"Multiple Log subclasses were found on the classpath. Using default Log class instance instead of subclasses");
+				} else {
+					log.info("No Log subclasses were found, using default Log class instance");
+				}
+			} else {
+				Class<?> classType = subTypes.toArray(new Class[1])[0];
+				log.info("Located Log subclass {}, using it for Instantiation", classType.getName());
+				logInstance = (Log) classType.getDeclaredConstructor().newInstance();
+			}
+		} else {
+			log.info("Root property is null, using default Log class instance");
+		}
 	}
 
 }
