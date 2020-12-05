@@ -1,5 +1,10 @@
 package com.oblivion.watchdogs.common.logger;
 
+import static com.oblivion.watchdogs.common.constants.GeneralConstants.ARG;
+import static com.oblivion.watchdogs.common.constants.GeneralConstants.D1;
+import static com.oblivion.watchdogs.common.constants.GeneralConstants.D2;
+import static com.oblivion.watchdogs.common.constants.GeneralConstants.D4;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,6 +15,32 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public class Log {
+
+	/**
+	 * Used for instance method invocation inside static context
+	 */
+	private static Log logInstance = new Log();
+	
+    /**
+     * Error message for any errors during logging and printing
+     */
+    private static String messageError = "An exception occurred while trying to log a message" + D1;
+    
+	/**
+	 * Getter
+	 * @return
+	 */
+    public static Log getLogInstance() {
+		return logInstance;
+	}
+
+    /**
+     * Setter
+     * @param logInstance
+     */
+	public static void setLogInstance(Log logInstance) {
+		Log.logInstance = logInstance;
+	}
     
     /**
      * Used for error logging
@@ -22,7 +53,7 @@ public class Log {
         try {
             Logger log = LoggerFactory.getLogger(instance.getClass());
             if (log.isErrorEnabled()) {
-                log.error(message, objects);
+                log.error(logInstance.checkMessage(message, objects), objects);
             }
         } catch (Exception e) {
             logStandardError(e);
@@ -40,7 +71,7 @@ public class Log {
         try {
             Logger log = LoggerFactory.getLogger(instance.getClass());
             if (log.isErrorEnabled()) {
-                log.error(message, objects);
+                log.error(logInstance.checkMessage(message, objects), objects);
             }
         } catch (Exception e) {
             logStandardError(e);
@@ -90,7 +121,7 @@ public class Log {
     public static void defaultError(Object instance, String message, Object... objects) {
         Logger log = LoggerFactory.getLogger(instance.getClass());
         if (log.isErrorEnabled()) {
-            log.error(message, objects);
+            log.error(logInstance.checkMessage(message, objects), objects);
         }
     }
 
@@ -105,7 +136,7 @@ public class Log {
         try {
             Logger log = LoggerFactory.getLogger(instance.getClass());
             if (log.isWarnEnabled()) {
-                log.warn(message, objects);
+                log.warn(logInstance.checkMessage(message), objects);
             }
         } catch (Exception e) {
             logStandardError(e);
@@ -123,7 +154,7 @@ public class Log {
         try {
             Logger log = LoggerFactory.getLogger(instance.getClass());
             if (log.isWarnEnabled()) {
-                log.warn(message, objects);
+                log.warn(logInstance.checkMessage(message), objects);
             }
         } catch (Exception e) {
             logStandardError(e);
@@ -140,7 +171,7 @@ public class Log {
     public static void defaultWarn(Object instance, String message, Object... objects) {
         Logger log = LoggerFactory.getLogger(instance.getClass());
         if (log.isWarnEnabled()) {
-            log.warn(message, objects);
+            log.warn(logInstance.checkMessage(message), objects);
         }
     }
 
@@ -155,7 +186,7 @@ public class Log {
         try {
             Logger log = LoggerFactory.getLogger(instance.getClass());
             if (log.isInfoEnabled()) {
-                log.info(message, objects);
+                log.info(logInstance.checkMessage(message, objects), objects);
             }
         } catch (Exception e) {
             logStandardError(e);
@@ -174,7 +205,7 @@ public class Log {
         try {
             Logger log = LoggerFactory.getLogger(instance.getClass());
             if (log.isInfoEnabled()) {
-                log.info(message, objects);
+                log.info(logInstance.checkMessage(message, objects), objects);
             }
         } catch (Exception e) {
             logStandardError(e);
@@ -191,7 +222,7 @@ public class Log {
     public static void defaultInfo(Object instance, String message, Object... objects) {
         Logger log = LoggerFactory.getLogger(instance.getClass());
         if (log.isInfoEnabled()) {
-            log.info(message, objects);
+            log.info(logInstance.checkMessage(message, objects), objects);
         }
     }
 
@@ -206,7 +237,7 @@ public class Log {
         try {
             Logger log = LoggerFactory.getLogger(instance.getClass());
             if (log.isDebugEnabled()) {
-                log.debug(message, objects);
+                log.debug(logInstance.checkMessage(message, objects), objects);
             }
         } catch (Exception e) {
             logStandardError(e);
@@ -224,7 +255,7 @@ public class Log {
         try {
             Logger log = LoggerFactory.getLogger(instance.getClass());
             if (log.isDebugEnabled()) {
-                log.debug(message, objects);
+                log.debug(logInstance.checkMessage(message, objects), objects);
             }
         } catch (Exception e) {
             logStandardError(e);
@@ -242,7 +273,7 @@ public class Log {
     public static void defaultDebug(Object instance, String message, Object... objects) {
         Logger log = LoggerFactory.getLogger(instance.getClass());
         if (log.isDebugEnabled()) {
-            log.debug(message, objects);
+            log.debug(logInstance.checkMessage(message, objects), objects);
         }
     }
 
@@ -257,7 +288,7 @@ public class Log {
         try {
             Logger log = LoggerFactory.getLogger(instance.getClass());
             if (log.isTraceEnabled()) {
-                log.trace(message, objects);
+                log.trace(logInstance.checkMessage(message, objects), objects);
             }
         } catch (Exception e) {
             logStandardError(e);
@@ -275,7 +306,7 @@ public class Log {
         try {
             Logger log = LoggerFactory.getLogger(instance.getClass());
             if (log.isTraceEnabled()) {
-                log.trace(message, objects);
+                log.trace(logInstance.checkMessage(message, objects), objects);
             }
         } catch (Exception e) {
             logStandardError(e);
@@ -293,10 +324,10 @@ public class Log {
     public static void defaultTrace(Object instance, String message, Object... objects) {
         Logger log = LoggerFactory.getLogger(instance.getClass());
         if (log.isTraceEnabled()) {
-            log.trace(message, objects);
+            log.trace(logInstance.checkMessage(message, objects), objects);
         }
     }
-    
+
     /**
      * Centralized location for the standard logging of any errors that occur
      * trying to log.
@@ -304,9 +335,9 @@ public class Log {
      * @param e
      */
     protected static void logStandardError(Exception e) {
-        log.error(e.toString());
+        log.error(messageError + e.getClass().getSimpleName() + D4 + e.getLocalizedMessage());
     }
-    
+
     /**
      * Re-implementing since method is not inherited
      *
@@ -350,6 +381,29 @@ public class Log {
      */
     public static boolean isTraceEnabled(Object instance) {
         return LoggerFactory.getLogger(instance.getClass()).isTraceEnabled();
+    }
+
+    /**
+     * @param message
+     * @return
+     */
+    public String checkMessage(String message, Object... objects) {
+        if (message == null || message.isEmpty()) {
+            StringBuilder args = new StringBuilder("Objects: ");
+            int length = 0;
+            if (null != objects) {
+                length = objects.length;
+            }
+            if (length == 0) {
+                return args + " No objects provided ";
+            }
+            for (int i = 1; i <= length; i++) {
+                args.append(ARG + D2);
+            }
+            args.delete(args.lastIndexOf(D2), args.length());
+            return args.toString();
+        }
+        return message;
     }
 
 }
