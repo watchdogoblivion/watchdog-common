@@ -8,6 +8,8 @@ import static com.oblivion.watchdogs.common.constants.GeneralConstants.D4;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.oblivion.watchdogs.common.utility.GenericUtility;
+
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -73,6 +75,7 @@ public class Log {
 		try {
 			Logger log = LoggerFactory.getLogger(instance.getClass());
 			if (log.isErrorEnabled()) {
+				logInstance.convertToJSON(objects);
 				log.error(logInstance.checkMessage(message, objects), objects);
 			}
 		} catch (Exception e) {
@@ -160,6 +163,7 @@ public class Log {
 		try {
 			Logger log = LoggerFactory.getLogger(instance.getClass());
 			if (log.isWarnEnabled()) {
+				logInstance.convertToJSON(objects);
 				log.warn(logInstance.checkMessage(message), objects);
 			}
 		} catch (Exception e) {
@@ -211,6 +215,7 @@ public class Log {
 		try {
 			Logger log = LoggerFactory.getLogger(instance.getClass());
 			if (log.isInfoEnabled()) {
+				logInstance.convertToJSON(objects);
 				log.info(logInstance.checkMessage(message, objects), objects);
 			}
 		} catch (Exception e) {
@@ -261,6 +266,7 @@ public class Log {
 		try {
 			Logger log = LoggerFactory.getLogger(instance.getClass());
 			if (log.isDebugEnabled()) {
+				logInstance.convertToJSON(objects);
 				log.debug(logInstance.checkMessage(message, objects), objects);
 			}
 		} catch (Exception e) {
@@ -312,6 +318,7 @@ public class Log {
 		try {
 			Logger log = LoggerFactory.getLogger(instance.getClass());
 			if (log.isTraceEnabled()) {
+				logInstance.convertToJSON(objects);
 				log.trace(logInstance.checkMessage(message, objects), objects);
 			}
 		} catch (Exception e) {
@@ -410,6 +417,17 @@ public class Log {
 			return args.toString();
 		}
 		return message;
+	}
+
+	/**
+	 * Used to convert objects to JSON strings with GSON library. Should override if
+	 * different library is desired for conversion.
+	 *
+	 * @param objects
+	 * @throws JsonProcessingException
+	 */
+	protected void convertToJSON(Object... objects) {
+		GenericUtility.convertToJSON(objects);
 	}
 
 }
