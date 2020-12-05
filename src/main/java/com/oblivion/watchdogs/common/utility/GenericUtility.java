@@ -84,6 +84,25 @@ public abstract class GenericUtility {
 	}
 
 	/**
+	 * This method is used to truncate a string by an indicated limit
+	 *
+	 * @param limit
+	 * @param str
+	 * @return
+	 */
+	public static String truncateString(int limit, String str) {
+		try {
+			if (str.length() > limit) {
+				return str.substring(0, limit).concat("...truncated");
+			}
+		} catch (Exception e) {
+			defaultError(GenericUtility.class, "An error occurred while trying to truncate the string: {}",
+					getJSONExceptionLogger("truncateString", e));
+		}
+		return str;
+	}
+
+	/**
 	 * Convert objects to JSON strings
 	 *
 	 * @param objects

@@ -20,7 +20,19 @@ public class GeneralConstants {
 	public static String D5 = " ::: ";
 
 	/*********************** Method logging ***********************/
+	public static final String START_METHOD = "Initiating method {}";
+	public static final String END_METHOD = "Terminating method: {}";
+	public static final String METHOD_EXCEPTION = "An Exception was thrown before the method could finish executing";
+	public static final String EXECUTION_MS = "Completed in {}ms";
+	public static final String VOID = "void";
+	public static final String EMPTY = "";
+	public static final String WITH_ARGS = "With arguments: {}";
+	public static final String WITH_RESPONSE = "With Response: {}";
 	public static final String ARG = "{}";
+
+	/*********************** package filters ***********************/
+	public static final String JAVA_UTIL = "java.util";
+	public static final String JAVA_LANG = "java.lang";
 
 	/************************ CONSOLE PRINTING ***********************/
 	public static final String OUT = "OUT";
