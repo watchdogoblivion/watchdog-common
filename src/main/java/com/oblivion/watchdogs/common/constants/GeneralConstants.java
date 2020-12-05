@@ -3,6 +3,7 @@ package com.oblivion.watchdogs.common.constants;
 import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -10,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author Samuel D. This class is for constants that can be used in any place.
  */
 @Slf4j
+@Component("GeneralConstants")
 public class GeneralConstants {
 
 	/*********************** Delimiters ***********************/
@@ -37,6 +39,9 @@ public class GeneralConstants {
 	/************************ CONSOLE PRINTING ***********************/
 	public static final String OUT = "OUT";
 	public static final String ERROR_OUT = "ERROR OUT";
+
+	/************************ CONTEXT INFO ***********************/
+	public static final String SERVICE = "Service";
 
 	/************************ DATE FORMAT ***********************/
 	public static String GLOBAL_CONSOLE_LOG_DATE_FORMAT = "yyyy/MM/dd HH:mm:ss,SSS";

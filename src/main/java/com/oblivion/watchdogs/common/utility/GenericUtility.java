@@ -1,35 +1,90 @@
 package com.oblivion.watchdogs.common.utility;
 
+import static com.oblivion.watchdogs.common.constants.GeneralConstants.D1;
+import static com.oblivion.watchdogs.common.constants.GeneralConstants.SERVICE;
+import static com.oblivion.watchdogs.common.constants.GeneralConstants.COMMON_ROOT;
+import static com.oblivion.watchdogs.common.constants.GeneralConstants.root;
 import static com.oblivion.watchdogs.common.logger.Log.defaultError;
+import static com.oblivion.watchdogs.common.logger.Log.defaultTrace;
+import static com.oblivion.watchdogs.common.logger.Log.getStackTraceLimit;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.aspectj.lang.JoinPoint;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.context.request.WebRequest;
 
-import static com.oblivion.watchdogs.common.constants.GeneralConstants.D1;
-import static com.oblivion.watchdogs.common.constants.GeneralConstants.COMMON_ROOT;
-import static com.oblivion.watchdogs.common.logger.Log.getStackTraceLimit;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.oblivion.watchdogs.common.exceptions.CustomException;
 import com.oblivion.watchdogs.common.logger.ExceptionLog;
 import com.oblivion.watchdogs.common.logger.JSONExceptionLogger;
+import com.oblivion.watchdogs.common.model.ApiError;
+import com.oblivion.watchdogs.common.model.InMemoryTransaction;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * @author Samuel D. A class used for general operations
  */
+@Slf4j
 public abstract class GenericUtility {
 
 	/**
 	 * Used to convert objects to JSON string
 	 */
 	private static final Gson GSON = new GsonBuilder().create();
+
+	/**
+	 * 
+	 * @return
+	 */
+	public static Properties getProperties() {
+		Properties prop = new Properties();
+		String propFileName = "application.properties";
+		String ymlFileName = "application.yml";
+		InputStream inputStream = null;
+		try {
+			inputStream = GenericUtility.class.getClass().getClassLoader().getResourceAsStream(propFileName);
+			if (inputStream != null) {
+				prop.load(inputStream);
+			} else {
+				log.info("Unable to locate properties file. Attempting to search for a yml file.");
+				inputStream = GenericUtility.class.getClass().getClassLoader().getResourceAsStream(ymlFileName);
+				if (inputStream != null) {
+					prop.load(inputStream);
+				} else {
+					throw new FileNotFoundException("property file '" + propFileName + "' not found in the classpath");
+				}
+			}
+		} catch (Exception e) {
+			log.error("An exception occurred during construction of Log.java: {}", Arrays.toString(e.getStackTrace()));
+		} finally {
+			if (inputStream != null) {
+				try {
+					inputStream.close();
+				} catch (IOException e) {
+					log.error("An exception occurred during construction of Log.java: {}",
+							Arrays.toString(e.getStackTrace()));
+				}
+			}
+		}
+		return prop;
+	}
 
 	/**
 	 * This method adds headers from a WebRequest to a header map, to be returned in
@@ -103,6 +158,35 @@ public abstract class GenericUtility {
 	}
 
 	/**
+	 * This method is used to merge an array and varargs
+	 *
+	 * @param objectsArray
+	 * @param objects
+	 * @return
+	 */
+	public static Object[] combineArray(Object[] objectsArray, Object... objects) {
+		Object[] newArray = null;
+		try {
+			newArray = new Object[objectsArray.length + objects.length];
+
+			int length = newArray.length;
+			int objectsArrayLength = objectsArray.length;
+
+			for (int i = 0; i < length; i++) {
+				if (i < objectsArrayLength) {
+					newArray[i] = objectsArray[i];
+				} else {
+					newArray[i] = objects[i - objectsArrayLength];
+				}
+			}
+		} catch (Exception e) {
+			defaultError(GenericUtility.class, "An error occurred while trying to combine the Arrays: {}",
+					getJSONExceptionLogger("combineArray", e));
+		}
+		return newArray;
+	}
+
+	/**
 	 * Convert objects to JSON strings
 	 *
 	 * @param objects
@@ -115,7 +199,8 @@ public abstract class GenericUtility {
 				objects[i] = GSON.toJson(objects[i]);
 			}
 		} catch (Exception e) {
-			defaultError(GenericUtility.class, "An error occurred while trying to convert object to JSON: {}", e);
+			defaultError(GenericUtility.class, "An error occurred while trying to convert object to JSON: {}",
+					getJSONExceptionLogger("convertToJSON", e));
 		}
 	}
 
@@ -133,9 +218,26 @@ public abstract class GenericUtility {
 			}
 		} catch (Exception e) {
 			defaultError(GenericUtility.class,
-					"An error occurred while trying to get an objects fully qualified domain name: {}", e);
+					"An error occurred while trying to get an objects fully qualified domain name: {}",
+					getJSONExceptionLogger("getClassFQDM", e));
 		}
 		return objectFQDM;
+	}
+
+	public static String getMethodFQDN(Object object, String methodName) {
+		return object.getClass().getName().concat(".").concat(methodName);
+	}
+
+	/**
+	 * Gets a complete JSONExceptionLogger object using a join point
+	 *
+	 * @param jp
+	 * @param ex
+	 * @return String
+	 * @throws JsonProcessingException
+	 */
+	public static String getJSONExceptionLogger(JoinPoint jp, Exception ex) {
+		return getJSONByType(jp, ex);
 	}
 
 	/**
@@ -148,11 +250,16 @@ public abstract class GenericUtility {
 		return getJSONByType(methodSignature, ex);
 	}
 
-	private static String getJSONByType(String methodSignature, Exception exception) {
+	private static String getJSONByType(Object methodSignature, Exception exception) {
 		String jSONExceptionLoggerString = null;
 		try {
 			JSONExceptionLogger jSONExceptionLogger = new JSONExceptionLogger();
-			jSONExceptionLogger.setConcludingMethodSignature(methodSignature);
+			if (methodSignature instanceof JoinPoint) {
+				jSONExceptionLogger
+						.setConcludingMethodSignature(((JoinPoint) methodSignature).getSignature().toString());
+			} else if (methodSignature instanceof String) {
+				jSONExceptionLogger.setConcludingMethodSignature((String) methodSignature);
+			}
 			setExceptionAndInfo(exception, jSONExceptionLogger);
 			List<Throwable> exceptions = getExceptions(exception);
 			setLoggerFields(exceptions, jSONExceptionLogger);
@@ -186,7 +293,16 @@ public abstract class GenericUtility {
 	 */
 	public static void setExceptionAndInfo(Throwable exception, JSONExceptionLogger jsonExceptionLogger) {
 		try {
-			jsonExceptionLogger.setRootExceptionMessage(exception.getLocalizedMessage());
+			if (exception instanceof CustomException && ((CustomException) exception).getEnclosedError() != null) {
+				CustomException customException = (CustomException) exception;
+				ApiError apiError = customException.getEnclosedError();
+				if (apiError != null) {
+					jsonExceptionLogger.setRootExceptionMessage(apiError.getDebugMessage());
+					jsonExceptionLogger.setAdditionalInfo(apiError.getAdditionalInfo());
+				}
+			} else {
+				jsonExceptionLogger.setRootExceptionMessage(exception.getLocalizedMessage());
+			}
 		} catch (Exception e) {
 			defaultError(GenericUtility.class,
 					"An error occurred while trying to set JSONExceptionLogger exception and " + "additional "
@@ -220,11 +336,12 @@ public abstract class GenericUtility {
 					StackTraceElement stackTraceElement = stackTraceElements[i];
 					String fileName = stackTraceElement.getClassName();
 					int lineNumber = stackTraceElement.getLineNumber();
-					if ((fileName.contains(COMMON_ROOT)) && lineNumber >= 0) {
+					if ((root != null && fileName.contains(root) || fileName.contains(COMMON_ROOT))
+							&& lineNumber >= 0) {
 						originatingIDELocators.add(stackTraceElement.toString());
 						element++;
 						String nextClassName = stackTraceElements[i + 1].getClassName();
-						if (i + 1 == length || !nextClassName.contains(COMMON_ROOT) || nextClassName.contains("CGLIB")
+						if (i + 1 == length || !nextClassName.contains(root) || nextClassName.contains("CGLIB")
 								|| element >= getStackTraceLimit()) {
 							isExternalException = false;
 							break;
@@ -269,6 +386,35 @@ public abstract class GenericUtility {
 					e.getClass().getSimpleName());
 		}
 		return jelString;
+	}
+
+	/**
+	 * Used to get the context info for a request
+	 *
+	 * @return contextInfo
+	 */
+	public static String getContextInfo() {
+		StringBuilder contextInfo = new StringBuilder();
+		final String errorMessage = "An error occurred while trying to get the user info from the "
+				+ "RequestContextHolder: {}";
+		try {
+			RequestAttributes requestAttributes = RequestContextHolder.currentRequestAttributes();
+			if (requestAttributes instanceof InMemoryTransaction) {
+				InMemoryTransaction inMemoryTransaction = (InMemoryTransaction) requestAttributes;
+				contextInfo.append("[").append(SERVICE).append(": ").append(inMemoryTransaction.getService())
+						.append("]");
+			} else {
+				HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder
+						.currentRequestAttributes()).getRequest();
+				contextInfo.append("[").append(SERVICE).append(": ").append(request.getServletPath()).append("]");
+
+			}
+		} catch (IllegalStateException i) {
+			defaultTrace(GenericUtility.class, errorMessage, getJSONExceptionLogger("getUserInfo", i));
+		} catch (Exception e) {
+			defaultError(GenericUtility.class, errorMessage, getJSONExceptionLogger("getUserInfo", e));
+		}
+		return contextInfo.toString();
 	}
 
 }
