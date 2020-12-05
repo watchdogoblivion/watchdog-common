@@ -22,6 +22,9 @@ public class GeneralConstants {
 	/************************ DATE FORMAT ***********************/
 	public static String GLOBAL_CONSOLE_LOG_DATE_FORMAT = "yyyy/MM/dd HH:mm:ss,SSS";
 	
+	/************************ Root package ***********************/
+	public static final String COMMON_ROOT = "com.oblivion.watchdogs.common";
+	
 	/**
 	 * Hiding no default constructor since this is a statically used class
 	 */

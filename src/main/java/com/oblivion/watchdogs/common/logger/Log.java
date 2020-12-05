@@ -9,6 +9,7 @@ import static com.oblivion.watchdogs.common.constants.GeneralConstants.ERROR_OUT
 import static com.oblivion.watchdogs.common.constants.GeneralConstants.GLOBAL_CONSOLE_LOG_DATE_FORMAT;
 import static com.oblivion.watchdogs.common.constants.GeneralConstants.OUT;
 import static com.oblivion.watchdogs.common.utility.GenericUtility.getClassFQDM;
+import static com.oblivion.watchdogs.common.utility.GenericUtility.getJSONExceptionLogger;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -17,6 +18,9 @@ import java.util.Date;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import org.slf4j.bridge.SLF4JBridgeHandler;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import com.oblivion.watchdogs.common.utility.GenericUtility;
 
@@ -26,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
  * @author Samuel D. logger class for all logging and Printing outputs
  */
 @Slf4j
+@Component
 public class Log {
 
 	/**
@@ -42,6 +47,21 @@ public class Log {
 	 * Used to add date to system outputs
 	 */
 	private static DateFormat dateFormat = new SimpleDateFormat(GLOBAL_CONSOLE_LOG_DATE_FORMAT);
+
+	/**
+	 * Static field to hold logHeaderLimit after its been initialized
+	 */
+	public static int headerLimit;
+
+	/**
+	 * Static field to hold logPayloadLimit after its been initialized
+	 */
+	public static int payloadLimit;
+
+	/**
+	 * Static field to hold logStackTraceLimit after its been initialized
+	 */
+	public static int stackTraceLimit;
 
 	/**
 	 * Getter
@@ -98,6 +118,79 @@ public class Log {
 	}
 
 	/**
+	 * Getter
+	 * 
+	 * @return
+	 */
+	public static int getHeaderLimit() {
+		return headerLimit;
+	}
+
+	/**
+	 * Setter
+	 * 
+	 * @param logInstance
+	 */
+	public static void setHeaderLimit(int headerLimit) {
+		Log.headerLimit = headerLimit;
+	}
+
+	/**
+	 * Getter
+	 * 
+	 * @return
+	 */
+	public static int getPayloadLimit() {
+		return payloadLimit;
+	}
+
+	/**
+	 * Setter
+	 * 
+	 * @param logInstance
+	 */
+	public static void setPayloadLimit(int payloadLimit) {
+		Log.payloadLimit = payloadLimit;
+	}
+
+	/**
+	 * Getter
+	 * 
+	 * @return
+	 */
+	public static int getStackTraceLimit() {
+		return stackTraceLimit;
+	}
+
+	public static void setStackTraceLimit(int stackTraceLimit) {
+		Log.stackTraceLimit = stackTraceLimit;
+	}
+
+	static {
+		SLF4JBridgeHandler.removeHandlersForRootLogger();
+		SLF4JBridgeHandler.install();
+	}
+
+	/**
+	 * Size limit for logging individual headers
+	 */
+	@Value("${log.header.limit:30}")
+	private int logHeaderLimit;
+
+	/**
+	 * Size limit for logging objects
+	 */
+	@Value("${log.payload.limit:5000}")
+	private int logPayloadLimit;
+
+	/**
+	 * Size limit for log object
+	 * com.cvs.opportunity.common.logger.JSONExceptionLogger
+	 */
+	@Value("${log.stackTrace.limit:10}")
+	private int logStackTraceLimit;
+
+	/**
 	 * Used for error logging
 	 *
 	 * @param instance
@@ -148,7 +241,7 @@ public class Log {
 	public static void prettyError(Object instance, String methodName, String message, Exception ex,
 			Object... objects) {
 		try {
-			error(instance, message, objects, ex);
+			error(instance, message, objects, getJSONExceptionLogger(methodName, ex));
 		} catch (Exception e) {
 			logStandardError(e);
 		}
